@@ -47,6 +47,7 @@
     <label>🔊 알람 볼륨</label>
     <input type="range" min="0" max="1" step="0.01" id="volumeSlider" />
     <button onclick="playTestSound()">볼륨 테스트</button>
+    <button onclick="unlockAudio()">🔓 오디오 권한 열기</button>
     <button onclick="toggleSummary()">📱 요약 모드</button>
     <button onclick="toggle30MinFilter(this)">🕒 30분 이하 보기</button>
   </div>
@@ -77,6 +78,23 @@
   <audio id="testSound"><source src="audio/Test.mp3" type="audio/mpeg" /></audio>
 
   <script>
+    // 오디오 권한 해제(브라우저에 오디오 허용시킴)
+    function unlockAudio() {
+      ["alarm10min", "alarm5min", "alarm1min", "alarm0.5min", "testSound"].forEach(id => {
+        const audio = document.getElementById(id);
+        try {
+          audio.volume = 0; // 소리 없이 play
+          audio.currentTime = 0;
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
+          });
+        } catch (e) { /* 무시 */ }
+      });
+      alert("오디오 권한이 활성화되었습니다!\n이제 백그라운드·최소화 시에도 알람이 울릴 확률이 높아집니다.");
+    }
+
     // 보스 + 미니보스 데이터
     const alarmData = [
       { name: "그루트 킹", location: "1-5", timeText: "매 시 정각", type: "보스", nextTime: t => new Date(t.getFullYear(), t.getMonth(), t.getDate(), t.getMinutes() === 0 ? t.getHours() : t.getHours() + 1, 0, 0) },
@@ -108,7 +126,6 @@
     }
 
     function getNextMiniBossTime(boss) {
-      // 저장된 리스폰시각이 있다면 그 값, 없으면 0(=출현대기중)
       const respawn = miniBossState[boss.name];
       if (respawn && respawn > Date.now()) return new Date(respawn);
       return null;
@@ -186,8 +203,14 @@
       const alarm = document.getElementById(id);
       if (!alarm) return;
       alarm.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
-      alarm.currentTime = 0;
-      alarm.play();
+      let count = 0;
+      function playRepeat() {
+        alarm.currentTime = 0;
+        alarm.play();
+        count++;
+        if (count < 3) setTimeout(playRepeat, 1200); // 3번 반복
+      }
+      playRepeat();
     }
 
     function toggleAll(min, state) {
