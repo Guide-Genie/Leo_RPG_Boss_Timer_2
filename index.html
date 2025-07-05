@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>레오서버 보스 타이머</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #ffffff;
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .current-time {
+      font-size: 2.4rem;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    table {
+      width: 100%;
+      max-width: 1000px;
+      margin: auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 6px 10px;
+      white-space: nowrap;
+      text-align: center;
+    }
+    th {
+      background-color: #222;
+      color: #ffcc00;
+    }
+    tr:nth-child(even) {
+      background-color: #1a1a1a;
+    }
+    .highlight-10min {
+      background-color: #1e442e !important;
+      color: #b6ffb6 !important;
+      box-shadow: 0 0 8px #b6ffb6;
+    }
+    .highlight-5min {
+      background-color: #4b4300 !important;
+      color: #ffe066 !important;
+      box-shadow: 0 0 8px #ffe066;
+    }
+    .highlight-1min {
+      background-color: #4a1a1a !important;
+      color: #ff8080 !important;
+      box-shadow: 0 0 8px #ff4d4d;
+    }
+    .highlight-30sec {
+      background-color: #00334d !important;
+      color: #66ccff !important;
+      box-shadow: 0 0 8px #66ccff;
+    }
+    .highlight-next {
+      outline: 2px solid #00ff99;
+    }
+    .summary-mode td:nth-child(n+4):nth-child(-n+8),
+    .summary-mode th:nth-child(n+4):nth-child(-n+8) {
+      display: none;
+    }
+    .mini-boss-btn {
+      font-size: 0.8rem;
+      padding: 2px 5px;
+      background-color: #333;
+      border: 1px solid #666;
+      color: #ccc;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>레오서버 보스 타이머</h1>
+  <div class="subtitle">by W_Pl</div>
+  <div class="current-time" id="currentTime"></div>
+  <div class="controls">
+    <label>🔊 알람 볼륨</label>
+    <input type="range" min="0" max="1" step="0.01" id="volumeSlider" />
+    <button onclick="playTestSound()">볼륨 테스트</button>
+    <button onclick="toggleSummary()">📱 요약 모드</button>
+    <button onclick="toggle30MinFilter(this)">🕒 30분 이하 보기</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>구분</th>
+        <th>보스명</th>
+        <th>위치</th>
+        <th>젠 시간</th>
+        <th>10분 전</th>
+        <th>5분 전</th>
+        <th>1분 전</th>
+        <th>30초 전</th>
+        <th>남은 시간</th>
+        <th>처치시 클릭</th>
+      </tr>
+    </thead>
+    <tbody id="bossTable"></tbody>
+  </table>
+  <div id="bossFilter" style="text-align: center; margin-top: 20px; color: #ccc;"></div>
+  <audio id="alarm1min"><source src="audio/boss_1min.mp3" type="audio/mpeg" /></audio>
+  <audio id="alarm5min"><source src="audio/boss_5min.mp3" type="audio/mpeg" /></audio>
+  <audio id="alarm10min"><source src="audio/boss_10min.mp3" type="audio/mpeg" /></audio>
+  <audio id="alarm30sec"><source src="audio/boss_30sec.mp3" type="audio/mpeg" /></audio>
+  <audio id="testSound"><source src="audio/Test.mp3" type="audio/mpeg" /></audio>
+<script>
+// === 알람 데이터 정의 ===
+const alarmData = [
+  { name: "그루트 킹", type: "보스", location: "1-5", timeText: "매 시 정각", nextTime: t => new Date(t.getFullYear(), t.getMonth(), t.getDate(), t.getMinutes() === 0 && t.getSeconds() === 0 ? t.getHours() : t.getHours() + 1, 0, 0) },
+  { name: "해적 선장", type: "보스", location: "2-5", timeText: "매 시 30분", nextTime: t => { const base = new Date(t); base.setSeconds(0); if (t.getMinutes() >= 30) base.setHours(base.getHours() + 1); base.setMinutes(30); return base; } },
+  { name: "아절 브루트", type: "보스", location: "3-5", timeText: "홀수 시 10분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 0 || (h % 2 === 1 && m >= 10)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 10, 0); } },
+  { name: "위더", type: "보스", location: "4-5", timeText: "짝수 시 10분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 1 || (h % 2 === 0 && m >= 10)) h++; if (h % 2 === 1) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 10, 0); } },
+  { name: "쿵푸", type: "보스", location: "5-1", timeText: "홀수 시 40분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 0 || (h % 2 === 1 && m >= 40)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
+  { name: "서리군주", type: "보스", location: "6-4", timeText: "짝수 시 40분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 1 || (h % 2 === 0 && m >= 40)) h++; if (h % 2 === 1) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
+  { name: "타락한 군주 세르칸", type: "보스", location: "7-4", timeText: "홀수 시 50분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 0 || (h % 2 === 1 && m >= 50)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 50, 0); } },
+  { name: "슬라임킹", type: "미니보스", location: "1-2", timeText: "30분 간격", intervalMin: 30 },
+  { name: "롭스터킹", type: "미니보스", location: "2-2", timeText: "30분 간격", intervalMin: 30 },
+  { name: "스톤 골렘", type: "미니보스", location: "3-2", timeText: "45분 간격", intervalMin: 45 },
+  { name: "리치킹", type: "미니보스", location: "4-3", timeText: "45분 간격", intervalMin: 45 },
+  { name: "해머로드", type: "미니보스", location: "5-4", timeText: "45분 간격", intervalMin: 45 },
+  { name: "설원 포식자 아크", type: "미니보스", location: "6-2", timeText: "60분 간격", intervalMin: 60 },
+  { name: "분대장 웬디고", type: "미니보스", location: "7-2", timeText: "60분 간격", intervalMin: 60 }
+];
+
+const alarmStates = JSON.parse(localStorage.getItem('alarmStates') || '{}');
+const triggered = {};
+const miniBossRespawnTimes = {};
+let bossFilterState = JSON.parse(localStorage.getItem('bossFilterState') || '{}');
+let filter10Active = false;
+
+function saveState() {
+  localStorage.setItem('alarmStates', JSON.stringify(alarmStates));
+  localStorage.setItem('bossFilterState', JSON.stringify(bossFilterState));
+}
+
+function getNextTime(boss) {
+  if (boss.type === '보스') return boss.nextTime(new Date());
+  if (miniBossRespawnTimes[boss.name]) return miniBossRespawnTimes[boss.name];
+  return new Date(0);
+}
+
+function applyHighlightingAndAlarms(now) {
+  let nextBoss = null;
+  let minTime = Infinity;
+  alarmData.forEach(boss => {
+    const remain = getNextTime(boss).getTime() - now.getTime();
+    if (remain < minTime) {
+      minTime = remain;
+      nextBoss = boss;
+    }
+  });
+  alarmData.forEach(boss => {
+    const row = document.getElementById(`row-${boss.name}`);
+    if (!row) return;
+    const remain = getNextTime(boss).getTime() - now.getTime();
+    row.classList.remove('highlight-10min', 'highlight-5min', 'highlight-1min', 'highlight-30sec', 'highlight-next');
+    if (boss === nextBoss) row.classList.add('highlight-next');
+    if (remain <= 30000) row.classList.add('highlight-30sec');
+    else if (remain <= 60000) row.classList.add('highlight-1min');
+    else if (remain <= 300000) row.classList.add('highlight-5min');
+    else if (remain <= 600000) row.classList.add('highlight-10min');
+  });
+}
+
+function toggleAll(min) {
+  const newState = !alarmData.some(boss => alarmStates[boss.name + '_' + min]);
+  alarmData.forEach(boss => { alarmStates[boss.name + '_' + min] = newState; });
+  saveState();
+  document.getElementById('bossTable').innerHTML = '';
+  document.getElementById('bossTable').append(...alarmData.map(createRow));
+  updateVisibility();
+}
+
+function toggle10MinFilter(button) {
+  filter10Active = !filter10Active;
+  button.textContent = filter10Active ? '🔎 전체 보기' : '🕙 10분 이하 보기';
+  updateVisibility();
+}
+
+function updateVisibility() {
+  const now = new Date();
+  alarmData.forEach(boss => {
+    const row = document.getElementById(`row-${boss.name}`);
+    const remain = getNextTime(boss).getTime() - now.getTime();
+    const isVisible = bossFilterState[boss.name] !== false;
+    row.style.display = isVisible && (!filter10Active || remain <= 600000) ? '' : 'none';
+  });
+}
+
+function addTopControlButtons() {
+  const ctrl = document.querySelector('.controls');
+  const box = document.createElement('div');
+  box.innerHTML = 
+    <span>일괄 적용/해제:</span>
+    <button onclick="toggleAll(10)">10분 전</button>
+    <button onclick="toggleAll(5)">5분 전</button>
+    <button onclick="toggleAll(1)">1분 전</button>
+    <button onclick="toggleAll(0.5)">30초 전</button>
+    <button onclick="toggle10MinFilter(this)">🕙 10분 이하 보기</button>
+  `;
+  ctrl.appendChild(box);
+}
+
+addTopControlButtons();
+</script>
+
+
+</body>
+</html>
