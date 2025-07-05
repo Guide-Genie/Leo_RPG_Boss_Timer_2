@@ -12,85 +12,30 @@
       margin: 0;
       padding: 20px;
     }
-    h1 {
-      color: #ffffff;
-      font-size: 2rem;
-      text-align: center;
-      margin-bottom: 5px;
-    }
-    .subtitle {
-      color: #888;
-      font-size: 0.9rem;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    .current-time {
-      font-size: 2.4rem;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .controls {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 10px;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    #bossFilter {
-      text-align: center;
-      margin: 20px 0;
-      color: #ccc;
-    }
-    table {
-      width: 100%;
-      max-width: 1000px;
-      margin: auto;
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #444;
-      padding: 6px 10px;
-      white-space: nowrap;
-      text-align: center;
-    }
-    th {
-      background-color: #222;
-      color: #ffcc00;
-    }
-    tr:nth-child(even) {
-      background-color: #1a1a1a;
-    }
-    .highlight-10min {
-      background-color: #1e442e !important;
-      color: #b6ffb6 !important;
-      box-shadow: 0 0 8px #b6ffb6;
-    }
-    .highlight-5min {
-      background-color: #4b4300 !important;
-      color: #ffe066 !important;
-      box-shadow: 0 0 8px #ffe066;
-    }
-    .highlight-1min {
-      background-color: #4a1a1a !important;
-      color: #ff8080 !important;
-      box-shadow: 0 0 8px #ff4d4d;
-    }
-    .highlight-30sec {
-      background-color: #00334d !important;
-      color: #66ccff !important;
-      box-shadow: 0 0 8px #66ccff;
-    }
-    .highlight-next {
-      outline: 2px solid #00ff99;
-    }
-    .summary-mode td:nth-child(n+4):nth-child(-n+8),
-    .summary-mode th:nth-child(n+4):nth-child(-n+8) {
+    h1 { color: #ffffff; font-size: 2rem; text-align: center; margin-bottom: 5px; }
+    .subtitle { color: #888; font-size: 0.9rem; text-align: center; margin-bottom: 20px; }
+    .current-time { font-size: 2.4rem; text-align: center; margin-bottom: 30px; }
+    .controls { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; gap: 10px; flex-wrap: wrap; }
+    .controls input[type="range"] { width: 150px; }
+    table { width: 100%; max-width: 900px; margin: auto; border-collapse: collapse; }
+    th, td { border: 1px solid #444; padding: 6px 10px; white-space: nowrap; text-align: center; }
+    th { background-color: #222; color: #ffcc00; }
+    th input[type="checkbox"] { transform: scale(1.2); margin-top: 4px; }
+    tr:nth-child(even) { background-color: #1a1a1a; }
+    .highlight-10min { background-color: #1e442e !important; color: #b6ffb6 !important; box-shadow: 0 0 8px #b6ffb6; }
+    .highlight-5min { background-color: #4b4300 !important; color: #ffe066 !important; box-shadow: 0 0 8px #ffe066; }
+    .highlight-1min { background-color: #4a1a1a !important; color: #ff8080 !important; box-shadow: 0 0 8px #ff4d4d; }
+    .highlight-30sec { background-color: #00334d !important; color: #66ccff !important; box-shadow: 0 0 8px #66ccff; }
+    .highlight-next { outline: 2px solid #00ff99; }
+    .summary-mode td:nth-child(4),
+    .summary-mode td:nth-child(5),
+    .summary-mode td:nth-child(6),
+    .summary-mode td:nth-child(7),
+    .summary-mode th:nth-child(4),
+    .summary-mode th:nth-child(5),
+    .summary-mode th:nth-child(6),
+    .summary-mode th:nth-child(7) {
       display: none;
-    }
-    .filter-box label {
-      margin-right: 10px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -103,211 +48,262 @@
     <input type="range" min="0" max="1" step="0.01" id="volumeSlider" />
     <button onclick="playTestSound()">볼륨 테스트</button>
     <button onclick="toggleSummary()">📱 요약 모드</button>
-    <button onclick="toggle10MinFilter(this)">🕙 10분 이하 보기</button>
-    <span>일괄 적용/해제:</span>
-    <button onclick="toggleAll(10)">10분 전</button>
-    <button onclick="toggleAll(5)">5분 전</button>
-    <button onclick="toggleAll(1)">1분 전</button>
-    <button onclick="toggleAll(0.5)">30초 전</button>
+    <button onclick="toggle30MinFilter(this)">🕒 30분 이하 보기</button>
   </div>
-  <div id="bossFilter" class="filter-box"></div>
-  <table>
+
+  <table id="bossTableContainer">
     <thead>
       <tr>
-        <th>구분</th>
         <th>보스명</th>
         <th>위치</th>
         <th>젠 시간</th>
-        <th>10분 전</th>
-        <th>5분 전</th>
-        <th>1분 전</th>
-        <th>30초 전</th>
+        <th>10분 전<br><input type="checkbox" onchange="toggleAll(10, this.checked)" /></th>
+        <th>5분 전<br><input type="checkbox" onchange="toggleAll(5, this.checked)" /></th>
+        <th>1분 전<br><input type="checkbox" onchange="toggleAll(1, this.checked)" /></th>
+        <th>30초 전<br><input type="checkbox" onchange="toggleAll(0.5, this.checked)" /></th>
         <th>남은 시간</th>
         <th>처치시 클릭</th>
       </tr>
     </thead>
     <tbody id="bossTable"></tbody>
   </table>
-  <audio id="alarm1min"><source src="audio/boss_1min.mp3" type="audio/mpeg" /></audio>
-  <audio id="alarm5min"><source src="audio/boss_5min.mp3" type="audio/mpeg" /></audio>
+
+  <div id="bossFilter" style="text-align: center; margin-top: 20px; color: #ccc;"></div>
+
   <audio id="alarm10min"><source src="audio/boss_10min.mp3" type="audio/mpeg" /></audio>
-  <audio id="alarm30sec"><source src="audio/boss_30sec.mp3" type="audio/mpeg" /></audio>
+  <audio id="alarm5min"><source src="audio/boss_5min.mp3" type="audio/mpeg" /></audio>
+  <audio id="alarm1min"><source src="audio/boss_1min.mp3" type="audio/mpeg" /></audio>
+  <audio id="alarm0.5min"><source src="audio/boss_30sec.mp3" type="audio/mpeg" /></audio>
   <audio id="testSound"><source src="audio/Test.mp3" type="audio/mpeg" /></audio>
+
   <script>
-    
-const alarmData = [
-  { name: "그루트 킹", type: "보스", location: "1-5", timeText: "매 시 정각", nextTime: t => new Date(t.getFullYear(), t.getMonth(), t.getDate(), t.getMinutes() === 0 && t.getSeconds() === 0 ? t.getHours() : t.getHours() + 1, 0, 0) },
-  { name: "해적 선장", type: "보스", location: "2-5", timeText: "매 시 30분", nextTime: t => { const base = new Date(t); base.setSeconds(0); if (t.getMinutes() >= 30) base.setHours(base.getHours() + 1); base.setMinutes(30); return base; } },
-  { name: "아절 브루트", type: "보스", location: "3-5", timeText: "홀수 시 10분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 0 || (h % 2 === 1 && m >= 10)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 10, 0); } },
-  { name: "위더", type: "보스", location: "4-5", timeText: "짝수 시 10분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 1 || (h % 2 === 0 && m >= 10)) h++; if (h % 2 === 1) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 10, 0); } },
-  { name: "쿵푸", type: "보스", location: "5-1", timeText: "홀수 시 40분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 0 || (h % 2 === 1 && m >= 40)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
-  { name: "서리군주", type: "보스", location: "6-4", timeText: "짝수 시 40분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 1 || (h % 2 === 0 && m >= 40)) h++; if (h % 2 === 1) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
-  { name: "타락한 군주 세르칸", type: "보스", location: "7-4", timeText: "홀수 시 50분", nextTime: t => { let h = t.getHours(), m = t.getMinutes(); if (h % 2 === 0 || (h % 2 === 1 && m >= 50)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 50, 0); } },
-  { name: "슬라임킹", type: "미니보스", location: "1-2", timeText: "30분 간격", intervalMin: 30 },
-  { name: "롭스터킹", type: "미니보스", location: "2-2", timeText: "30분 간격", intervalMin: 30 },
-  { name: "스톤 골렘", type: "미니보스", location: "3-2", timeText: "45분 간격", intervalMin: 45 },
-  { name: "리치킹", type: "미니보스", location: "4-3", timeText: "45분 간격", intervalMin: 45 },
-  { name: "해머로드", type: "미니보스", location: "5-4", timeText: "45분 간격", intervalMin: 45 },
-  { name: "설원 포식자 아크", type: "미니보스", location: "6-2", timeText: "60분 간격", intervalMin: 60 },
-  { name: "분대장 웬디고", type: "미니보스", location: "7-2", timeText: "60분 간격", intervalMin: 60 },
-];
+    // 보스 + 미니보스 데이터
+    const alarmData = [
+      { name: "그루트 킹", location: "1-5", timeText: "매 시 정각", type: "보스", nextTime: t => new Date(t.getFullYear(), t.getMonth(), t.getDate(), t.getMinutes() === 0 ? t.getHours() : t.getHours() + 1, 0, 0) },
+      { name: "해적 선장", location: "2-5", timeText: "매 시 30분", type: "보스", nextTime: t => { const base = new Date(t); if (t.getMinutes() >= 30) base.setHours(base.getHours() + 1); base.setMinutes(30, 0, 0); return base; } },
+      { name: "아절 브루트", location: "3-5", timeText: "홀수 시 10분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 0 || (h % 2 === 1 && t.getMinutes() >= 10)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 10, 0); } },
+      { name: "위더", location: "4-5", timeText: "짝수 시 10분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 1 || (h % 2 === 0 && t.getMinutes() >= 10)) h++; if (h % 2 === 1) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 10, 0); } },
+      { name: "쿵푸", location: "5-1", timeText: "홀수 시 40분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 0 || (h % 2 === 1 && t.getMinutes() >= 40)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
+      { name: "서리군주", location: "6-4", timeText: "짝수 시 40분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 1 || (h % 2 === 0 && t.getMinutes() >= 40)) h++; if (h % 2 === 1) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
+      { name: "타락한 군주 세르칸", location: "7-4", timeText: "홀수 시 50분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 0 || (h % 2 === 1 && t.getMinutes() >= 50)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 50, 0); } },
+      // 미니보스 (리스폰은 처치시각 기준)
+      { name: "슬라임킹", location: "1-2", intervalMin: 30, timeText: "30분 간격", type: "미니보스" },
+      { name: "롭스터킹", location: "2-2", intervalMin: 30, timeText: "30분 간격", type: "미니보스" },
+      { name: "스톤 골렘", location: "3-2", intervalMin: 45, timeText: "45분 간격", type: "미니보스" },
+      { name: "리치킹", location: "4-3", intervalMin: 45, timeText: "45분 간격", type: "미니보스" },
+      { name: "해머로드", location: "5-4", intervalMin: 45, timeText: "45분 간격", type: "미니보스" },
+      { name: "설원 포식자 아크", location: "6-2", intervalMin: 60, timeText: "60분 간격", type: "미니보스" },
+      { name: "분대장 웬디고", location: "7-2", intervalMin: 60, timeText: "60분 간격", type: "미니보스" }
+    ];
 
-// 이후 전체 보스 필터, 알람 설정, UI 생성, 타이머 등 포함한 full js 구현 이어서 삽입 예정
+    const alarmStates = JSON.parse(localStorage.getItem('alarmStates') || '{}');
+    const triggered = {};
+    let filter30Active = false;
+    let bossFilterState = JSON.parse(localStorage.getItem('bossFilterState') || '{}');
+    let miniBossState = JSON.parse(localStorage.getItem('miniBossState') || '{}'); // 미니보스 리스폰 시각
 
-// 아래 코드로 이어서 전체 기능 포함
-window.addEventListener('DOMContentLoaded', () => {
-  const bossTable = document.getElementById('bossTable');
-  const volumeSlider = document.getElementById('volumeSlider');
-  const currentTime = document.getElementById('currentTime');
-  const alarms = {
-    10: document.getElementById('alarm10min'),
-    5: document.getElementById('alarm5min'),
-    1: document.getElementById('alarm1min'),
-    0.5: document.getElementById('alarm30sec')
-  };
+    function saveState() {
+      localStorage.setItem('alarmStates', JSON.stringify(alarmStates));
+      localStorage.setItem('miniBossState', JSON.stringify(miniBossState));
+    }
 
-  let alarmStates = JSON.parse(localStorage.getItem('alarmStates') || '{}');
-  let miniRespawn = {};
-  let triggered = {};
-  let filterState = JSON.parse(localStorage.getItem('bossFilterState') || '{}');
-  let summaryMode = false;
-  let filter10 = false;
+    function getNextMiniBossTime(boss) {
+      // 저장된 리스폰시각이 있다면 그 값, 없으면 0(=출현대기중)
+      const respawn = miniBossState[boss.name];
+      if (respawn && respawn > Date.now()) return new Date(respawn);
+      return null;
+    }
 
-  function saveState() {
-    localStorage.setItem('alarmStates', JSON.stringify(alarmStates));
-    localStorage.setItem('bossFilterState', JSON.stringify(filterState));
-  }
-
-  function playTestSound() {
-    document.getElementById('testSound').volume = volumeSlider.value;
-    document.getElementById('testSound').play();
-  }
-
-  window.playTestSound = playTestSound;
-
-  function getNextTime(boss) {
-    if (boss.type === '미니보스') return miniRespawn[boss.name] || 0;
-    return boss.nextTime(new Date());
-  }
-
-  function updateTable() {
-    const now = new Date();
-    currentTime.textContent = now.toLocaleTimeString();
-
-    let nextMin = Infinity;
-    let nextName = null;
-
-    alarmData.forEach(boss => {
-      const row = document.getElementById(`row-${boss.name}`);
-      const t = getNextTime(boss);
-      const remain = Math.floor((t - now) / 1000);
-
-      if (remain < nextMin) {
-        nextMin = remain;
-        nextName = boss.name;
-      }
-
-      const td = row.querySelector('.remain');
-      if (remain >= 0) {
-        const m = Math.floor(remain / 60);
-        const s = remain % 60;
-        td.textContent = `${m}분 ${s}초`;
-      } else {
-        td.textContent = '-';
-      }
-
-      row.classList.remove('highlight-10min', 'highlight-5min', 'highlight-1min', 'highlight-30sec', 'highlight-next');
-      if (boss.name === nextName) row.classList.add('highlight-next');
-      if (remain <= 30 && remain >= 0) row.classList.add('highlight-30sec');
-      else if (remain <= 60) row.classList.add('highlight-1min');
-      else if (remain <= 300) row.classList.add('highlight-5min');
-      else if (remain <= 600) row.classList.add('highlight-10min');
+    function createRow(boss) {
+      const tr = document.createElement('tr');
+      tr.id = `row-${boss.name}`;
+      tr.innerHTML = `<td>${boss.name}</td><td>${boss.location}</td><td>${boss.timeText}</td>`;
 
       [10, 5, 1, 0.5].forEach(min => {
-        const key = boss.name + '_' + min;
-        if (alarmStates[key] && remain === Math.floor(min * 60) && !triggered[key]) {
-          alarms[min].volume = volumeSlider.value;
-          alarms[min].play();
-          triggered[key] = true;
-        }
-        if (remain > Math.floor(min * 60)) triggered[key] = false;
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = alarmStates[boss.name + '_' + min] || false;
+        input.addEventListener('change', () => {
+          alarmStates[boss.name + '_' + min] = input.checked;
+          saveState();
+        });
+        td.appendChild(input);
+        tr.appendChild(td);
       });
+
+      const tdRemain = document.createElement('td');
+      tdRemain.id = `remain-time-${boss.name}`;
+      tr.appendChild(tdRemain);
+
+      // 미니보스는 '처치' 버튼 추가
+      const tdKill = document.createElement('td');
+      if (boss.type === "미니보스") {
+        const btn = document.createElement('button');
+        btn.textContent = '처치';
+        btn.onclick = function () {
+          const next = Date.now() + boss.intervalMin * 60 * 1000;
+          miniBossState[boss.name] = next;
+          saveState();
+          updateTime();
+        };
+        tdKill.appendChild(btn);
+      }
+      tr.appendChild(tdKill);
+
+      return tr;
+    }
+
+    function renderBossFilter() {
+      const container = document.getElementById('bossFilter');
+      container.innerHTML = '<strong>보스 필터: </strong>';
+      alarmData.forEach(boss => {
+        const label = document.createElement('label');
+        label.style.marginRight = '10px';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = bossFilterState[boss.name] ?? true;
+        input.addEventListener('change', () => {
+          bossFilterState[boss.name] = input.checked;
+          localStorage.setItem('bossFilterState', JSON.stringify(bossFilterState));
+          updateBossVisibility();
+        });
+        label.appendChild(input);
+        label.append(` ${boss.name}`);
+        container.appendChild(label);
+      });
+    }
+
+    function playTestSound() {
+      const alarm = document.getElementById('testSound');
+      alarm.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
+      alarm.currentTime = 0;
+      alarm.play();
+    }
+
+    function triggerAlarm(name, min) {
+      const id = min === 0.5 ? 'alarm0.5min' : `alarm${min}min`;
+      const alarm = document.getElementById(id);
+      if (!alarm) return;
+      alarm.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
+      alarm.currentTime = 0;
+      alarm.play();
+    }
+
+    function toggleAll(min, state) {
+      alarmData.forEach(boss => {
+        alarmStates[boss.name + '_' + min] = state;
+      });
+      saveState();
+      renderTable();
+    }
+
+    function toggleSummary() {
+      document.getElementById('bossTableContainer').classList.toggle('summary-mode');
+    }
+
+    function toggle30MinFilter(button) {
+      filter30Active = !filter30Active;
+      button.textContent = filter30Active ? '🔎 전체 보기' : '🕒 30분 이하 보기';
+      updateBossVisibility();
+    }
+
+    function updateBossVisibility() {
+      const now = new Date();
+      alarmData.forEach(boss => {
+        const row = document.getElementById(`row-${boss.name}`);
+        let remain = 0;
+        if (boss.type === "미니보스") {
+          const t = getNextMiniBossTime(boss);
+          remain = t ? t - now : 0;
+        } else {
+          remain = boss.nextTime(now) - now;
+        }
+        const isVisible = bossFilterState[boss.name] !== false;
+        row.style.display = isVisible && (!filter30Active || remain <= 1800000) ? '' : 'none';
+      });
+    }
+
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('currentTime').innerText = now.toLocaleTimeString('ko-KR', { hour12: false });
+
+      let nextBoss = null;
+      let minTime = Infinity;
+
+      alarmData.forEach(boss => {
+        let remain = 0;
+        if (boss.type === "미니보스") {
+          const t = getNextMiniBossTime(boss);
+          remain = t ? t - now : 0;
+        } else {
+          remain = boss.nextTime(now) - now;
+        }
+        if (remain > 0 && remain < minTime) {
+          minTime = remain;
+          nextBoss = boss;
+        }
+      });
+
+      alarmData.forEach(boss => {
+        let remain = 0;
+        if (boss.type === "미니보스") {
+          const t = getNextMiniBossTime(boss);
+          remain = t ? t - now : 0;
+        } else {
+          remain = boss.nextTime(now) - now;
+        }
+        const row = document.getElementById(`row-${boss.name}`);
+        const cell = document.getElementById(`remain-time-${boss.name}`);
+        if (remain > 0) {
+          const h = Math.floor(remain / 3600000);
+          const m = Math.floor((remain % 3600000) / 60000);
+          const s = Math.floor((remain % 60000) / 1000);
+          cell.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        } else {
+          cell.textContent = boss.type === "미니보스" ? "리스폰 대기" : "-";
+        }
+
+        row.classList.remove('highlight-10min', 'highlight-5min', 'highlight-1min', 'highlight-30sec', 'highlight-next');
+        if (boss === nextBoss && remain > 0) row.classList.add('highlight-next');
+        if (remain <= 30000 && remain > 0) row.classList.add('highlight-30sec');
+        else if (remain <= 60000 && remain > 0) row.classList.add('highlight-1min');
+        else if (remain <= 300000 && remain > 0) row.classList.add('highlight-5min');
+        else if (remain <= 600000 && remain > 0) row.classList.add('highlight-10min');
+
+        [10, 5, 1, 0.5].forEach(min => {
+          const key = boss.name + '_' + min;
+          const triggerKey = key + '_triggered';
+          const delta = min * 60000;
+          if (
+            alarmStates[key] &&
+            remain > 0 &&
+            Math.abs(remain - delta) < 1500 &&
+            !triggered[triggerKey]
+          ) {
+            triggerAlarm(boss.name, min);
+            triggered[triggerKey] = true;
+            setTimeout(() => { triggered[triggerKey] = false; }, 60000);
+          }
+        });
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('bossTable');
+      tbody.innerHTML = '';
+      alarmData.forEach(boss => tbody.appendChild(createRow(boss)));
+    }
+
+    document.getElementById('volumeSlider').value = localStorage.getItem('alarmVolume') || 0.5;
+    document.getElementById('volumeSlider').addEventListener('input', e => {
+      localStorage.setItem('alarmVolume', e.target.value);
     });
-  }
 
-  function createRow(boss) {
-    const row = document.createElement('tr');
-    row.id = `row-${boss.name}`;
-    row.innerHTML = `
-      <td>${boss.type}</td>
-      <td>${boss.name}</td>
-      <td>${boss.location}</td>
-      <td>${boss.timeText}</td>
-      ${[10,5,1,0.5].map(min => {
-        const key = boss.name + '_' + min;
-        const checked = alarmStates[key] ? 'checked' : '';
-        return `<td><input type="checkbox" onchange="alarmStates['${key}']=this.checked;saveState();" ${checked}></td>`;
-      }).join('')}
-      <td class="remain">-</td>
-      <td>${boss.type === '미니보스' ? `<button onclick="setMiniRespawn('${boss.name}', ${boss.intervalMin})">처치</button>` : '-'}</td>
-    `;
-    return row;
-  }
-
-  function renderBossFilter() {
-    const box = document.getElementById('bossFilter');
-    box.innerHTML = alarmData.map(b => `<label><input type="checkbox" onchange="filterState['${b.name}']=this.checked;saveState();renderTable();" ${filterState[b.name]!==false?'checked':''}/> ${b.name}</label>`).join(' ');
-  }
-
-  function renderTable() {
-    bossTable.innerHTML = '';
-    alarmData.forEach(b => {
-      if (filterState[b.name] !== false) bossTable.appendChild(createRow(b));
-    });
-  }
-
-  window.saveState = saveState;
-  window.filterState = filterState;
-  window.alarmStates = alarmStates;
-  window.setMiniRespawn = (name, min) => {
-    miniRespawn[name] = new Date(Date.now() + min * 60000);
     renderTable();
-  };
-  window.toggleAll = (min) => {
-    const state = alarmData.some(b => alarmStates[b.name + '_' + min]);
-    alarmData.forEach(b => alarmStates[b.name + '_' + min] = !state);
-    saveState();
-    renderTable();
-  };
-let filter10Active = false;
-function toggle10MinFilter(button) {
-  filter10Active = !filter10Active;
-  button.textContent = filter10Active ? '🔎 전체 보기' : '🕙 10분 이하 보기';
-  updateVisibility();
-}
-function updateVisibility() {
-  const now = new Date();
-  document.querySelectorAll('#bossTable tr').forEach(row => {
-    const timeCell = row.querySelector('.time-left');
-    if (!timeCell) return;
-    const time = timeCell.dataset.time;
-    if (!time) return;
-    const remain = parseInt(time);
-    row.style.display = (!filter10Active || remain <= 600000) ? '' : 'none';
-  });
-}
-
-  window.toggleSummary = () => {
-    summaryMode = !summaryMode;
-    document.querySelector('table').classList.toggle('summary-mode', summaryMode);
-  };
-
-  renderBossFilter();
-  renderTable();
-  updateTable();
-  setInterval(updateTable, 1000);
-});
-
-</script>
+    renderBossFilter();
+    updateBossVisibility();
+    setInterval(updateTime, 1000);
+  </script>
 </body>
 </html>
