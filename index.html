@@ -134,6 +134,7 @@
   <audio id="alarm30sec"><source src="audio/boss_30sec.mp3" type="audio/mpeg" /></audio>
   <audio id="testSound"><source src="audio/Test.mp3" type="audio/mpeg" /></audio>
   <script>
+    
 const alarmData = [
   { name: "그루트 킹", type: "보스", location: "1-5", timeText: "매 시 정각", nextTime: t => new Date(t.getFullYear(), t.getMonth(), t.getDate(), t.getMinutes() === 0 && t.getSeconds() === 0 ? t.getHours() : t.getHours() + 1, 0, 0) },
   { name: "해적 선장", type: "보스", location: "2-5", timeText: "매 시 30분", nextTime: t => { const base = new Date(t); base.setSeconds(0); if (t.getMinutes() >= 30) base.setHours(base.getHours() + 1); base.setMinutes(30); return base; } },
@@ -278,11 +279,24 @@ window.addEventListener('DOMContentLoaded', () => {
     saveState();
     renderTable();
   };
-  window.toggle10MinFilter = (btn) => {
-    filter10 = !filter10;
-    btn.textContent = filter10 ? '🔎 전체 보기' : '🕙 10분 이하 보기';
-    renderTable();
-  };
+let filter10Active = false;
+function toggle10MinFilter(button) {
+  filter10Active = !filter10Active;
+  button.textContent = filter10Active ? '🔎 전체 보기' : '🕙 10분 이하 보기';
+  updateVisibility();
+}
+function updateVisibility() {
+  const now = new Date();
+  document.querySelectorAll('#bossTable tr').forEach(row => {
+    const timeCell = row.querySelector('.time-left');
+    if (!timeCell) return;
+    const time = timeCell.dataset.time;
+    if (!time) return;
+    const remain = parseInt(time);
+    row.style.display = (!filter10Active || remain <= 600000) ? '' : 'none';
+  });
+}
+
   window.toggleSummary = () => {
     summaryMode = !summaryMode;
     document.querySelector('table').classList.toggle('summary-mode', summaryMode);
