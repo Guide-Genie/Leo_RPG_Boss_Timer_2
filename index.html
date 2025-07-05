@@ -198,20 +198,15 @@
       alarm.play();
     }
 
-    function triggerAlarm(name, min) {
-      const id = min === 0.5 ? 'alarm0.5min' : `alarm${min}min`;
-      const alarm = document.getElementById(id);
-      if (!alarm) return;
-      alarm.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
-      let count = 0;
-      function playRepeat() {
-        alarm.currentTime = 0;
-        alarm.play();
-        count++;
-        if (count < 3) setTimeout(playRepeat, 1200); // 3번 반복
-      }
-      playRepeat();
-    }
+function triggerAlarm(name, min) {
+  const id = min === 0.5 ? 'alarm0.5min' : `alarm${min}min`;
+  const alarm = document.getElementById(id);
+  if (!alarm) return;
+  alarm.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
+  alarm.currentTime = 0;
+  alarm.play();
+}
+
 
     function toggleAll(min, state) {
       alarmData.forEach(boss => {
