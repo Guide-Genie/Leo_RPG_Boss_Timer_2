@@ -37,6 +37,37 @@
     .summary-mode th:nth-child(7) {
       display: none;
     }
+    .reward-badge {
+      margin-left: 4px;
+      font-size: 1.2em;
+      vertical-align: middle;
+      cursor: pointer;
+      user-select: none;
+      display: inline-block;
+      position: relative;
+    }
+    /* 툴팁 스타일 */
+    .reward-badge-tooltip {
+      display: none;
+      position: absolute;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #232323;
+      color: #ffd700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      font-size: 0.93em;
+      z-index: 99;
+      box-shadow: 0 2px 10px #0008;
+      pointer-events: none;
+      opacity: 0.97;
+    }
+    .reward-badge.show-tooltip .reward-badge-tooltip,
+    .reward-badge:focus .reward-badge-tooltip {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -78,19 +109,19 @@
   <audio id="testSound"><source src="audio/Test.mp3" type="audio/mpeg" /></audio>
 
   <script>
-    // 오디오 권한 해제(브라우저에 오디오 허용시킴)
+    // 오디오 권한 해제
     function unlockAudio() {
       ["alarm10min", "alarm5min", "alarm1min", "alarm0.5min", "testSound"].forEach(id => {
         const audio = document.getElementById(id);
         try {
-          audio.volume = 0; // 소리 없이 play
+          audio.volume = 0;
           audio.currentTime = 0;
           audio.play().then(() => {
             audio.pause();
             audio.currentTime = 0;
             audio.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
           });
-        } catch (e) { /* 무시 */ }
+        } catch (e) {}
       });
       alert("오디오 권한이 활성화되었습니다!\n이제 백그라운드·최소화 시에도 알람이 울릴 확률이 높아집니다.");
     }
@@ -104,7 +135,7 @@
       { name: "쿵푸", location: "5-1", timeText: "홀수 시 40분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 0 || (h % 2 === 1 && t.getMinutes() >= 40)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
       { name: "서리군주", location: "6-4", timeText: "짝수 시 40분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 1 || (h % 2 === 0 && t.getMinutes() >= 40)) h++; if (h % 2 === 1) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 40, 0); } },
       { name: "타락한 군주 세르칸", location: "7-4", timeText: "홀수 시 50분", type: "보스", nextTime: t => { let h = t.getHours(); if (h % 2 === 0 || (h % 2 === 1 && t.getMinutes() >= 50)) h++; if (h % 2 === 0) h++; return new Date(t.getFullYear(), t.getMonth(), t.getDate(), h, 50, 0); } },
-      // 미니보스 (리스폰은 처치시각 기준)
+      // 미니보스
       { name: "슬라임킹", location: "1-2", intervalMin: 30, timeText: "30분 간격", type: "미니보스" },
       { name: "롭스터킹", location: "2-2", intervalMin: 30, timeText: "30분 간격", type: "미니보스" },
       { name: "스톤 골렘", location: "3-2", intervalMin: 45, timeText: "45분 간격", type: "미니보스" },
@@ -118,7 +149,7 @@
     const triggered = {};
     let filter30Active = false;
     let bossFilterState = JSON.parse(localStorage.getItem('bossFilterState') || '{}');
-    let miniBossState = JSON.parse(localStorage.getItem('miniBossState') || '{}'); // 미니보스 리스폰 시각
+    let miniBossState = JSON.parse(localStorage.getItem('miniBossState') || '{}');
 
     function saveState() {
       localStorage.setItem('alarmStates', JSON.stringify(alarmStates));
@@ -153,7 +184,6 @@
       tdRemain.id = `remain-time-${boss.name}`;
       tr.appendChild(tdRemain);
 
-      // 미니보스는 '처치' 버튼 추가
       const tdKill = document.createElement('td');
       if (boss.type === "미니보스") {
         const btn = document.createElement('button');
@@ -161,6 +191,7 @@
         btn.onclick = function () {
           const next = Date.now() + boss.intervalMin * 60 * 1000;
           miniBossState[boss.name] = next;
+          miniBossState[boss.name + "_lastKill"] = Date.now();
           saveState();
           updateTime();
         };
@@ -198,15 +229,14 @@
       alarm.play();
     }
 
-function triggerAlarm(name, min) {
-  const id = min === 0.5 ? 'alarm0.5min' : `alarm${min}min`;
-  const alarm = document.getElementById(id);
-  if (!alarm) return;
-  alarm.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
-  alarm.currentTime = 0;
-  alarm.play();
-}
-
+    function triggerAlarm(name, min) {
+      const id = min === 0.5 ? 'alarm0.5min' : `alarm${min}min`;
+      const alarm = document.getElementById(id);
+      if (!alarm) return;
+      alarm.volume = parseFloat(document.getElementById('volumeSlider').value || 0.5);
+      alarm.currentTime = 0;
+      alarm.play();
+    }
 
     function toggleAll(min, state) {
       alarmData.forEach(boss => {
@@ -242,6 +272,24 @@ function triggerAlarm(name, min) {
       });
     }
 
+    // 뱃지 툴팁 이벤트 세팅 (PC/모바일)
+    function setRewardBadgeTooltipEvents() {
+      document.querySelectorAll('.reward-badge').forEach(el => {
+        el.onmouseenter = () => el.classList.add('show-tooltip');
+        el.onmouseleave = () => el.classList.remove('show-tooltip');
+        el.onclick = e => {
+          if (window.ontouchstart !== undefined) {
+            e.stopPropagation();
+            el.classList.toggle('show-tooltip');
+            setTimeout(() => el.classList.remove('show-tooltip'), 1600);
+          }
+        };
+      });
+      document.body.onclick = () => {
+        document.querySelectorAll('.reward-badge').forEach(el => el.classList.remove('show-tooltip'));
+      };
+    }
+
     function updateTime() {
       const now = new Date();
       document.getElementById('currentTime').innerText = now.toLocaleTimeString('ko-KR', { hour12: false });
@@ -273,15 +321,19 @@ function triggerAlarm(name, min) {
         }
         const row = document.getElementById(`row-${boss.name}`);
         const cell = document.getElementById(`remain-time-${boss.name}`);
+
+        // 메인 남은시간
+        let displayTime = "";
         if (remain > 0) {
           const h = Math.floor(remain / 3600000);
           const m = Math.floor((remain % 3600000) / 60000);
           const s = Math.floor((remain % 60000) / 1000);
-          cell.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          displayTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         } else {
-          cell.textContent = boss.type === "미니보스" ? "리스폰 대기" : "-";
+          displayTime = boss.type === "미니보스" ? "리스폰 대기" : "-";
         }
 
+        // 하이라이트
         row.classList.remove('highlight-10min', 'highlight-5min', 'highlight-1min', 'highlight-30sec', 'highlight-next');
         if (boss === nextBoss && remain > 0) row.classList.add('highlight-next');
         if (remain <= 30000 && remain > 0) row.classList.add('highlight-30sec');
@@ -289,6 +341,7 @@ function triggerAlarm(name, min) {
         else if (remain <= 300000 && remain > 0) row.classList.add('highlight-5min');
         else if (remain <= 600000 && remain > 0) row.classList.add('highlight-10min');
 
+        // 알람
         [10, 5, 1, 0.5].forEach(min => {
           const key = boss.name + '_' + min;
           const triggerKey = key + '_triggered';
@@ -304,7 +357,34 @@ function triggerAlarm(name, min) {
             setTimeout(() => { triggered[triggerKey] = false; }, 60000);
           }
         });
+
+        // 미니보스 리워드 뱃지
+        if (boss.type === "미니보스") {
+          let badge = '';
+          const lastKill = miniBossState[boss.name + "_lastKill"];
+          if (lastKill) {
+            const rewardRemain = (lastKill + 25 * 60 * 1000) - Date.now();
+            if (rewardRemain > 0) {
+              const rm = Math.floor(rewardRemain / 60000);
+              const rs = Math.floor((rewardRemain % 60000) / 1000);
+              badge = `<span class="reward-badge" tabindex="0">
+                ⏳
+                <span class="reward-badge-tooltip">리워드까지 ${rm.toString().padStart(2, '0')}:${rs.toString().padStart(2, '0')}</span>
+              </span>`;
+            } else {
+              badge = `<span class="reward-badge" tabindex="0">
+                🎁
+                <span class="reward-badge-tooltip">리워드 획득 가능!</span>
+              </span>`;
+            }
+          }
+          cell.innerHTML = displayTime + (badge ? ' ' + badge : '');
+        } else {
+          cell.textContent = displayTime;
+        }
       });
+
+      setRewardBadgeTooltipEvents();
     }
 
     function renderTable() {
